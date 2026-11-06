@@ -14,10 +14,12 @@ jobs:
         run: shellcheck -S warning -e SC2034,SC2154 dist/tt.sh install.sh
       - name: Синтаксис bash
         run: bash -n dist/tt.sh && bash -n install.sh
-      - name: Тесты генераторов (Python 3.9 и новее)
+      - name: Тесты генераторов
         run: python3 -m unittest discover -s tests -v
-      - name: Python 3.9 (как на Rocky Linux 9)
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.9"
-      - run: python -m unittest discover -s tests
+  rocky9:
+    name: Тесты на Rocky Linux 9 (Python 3.9)
+    runs-on: ubuntu-latest
+    container: rockylinux/rockylinux:9
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 --version && python3 -m unittest discover -s tests -v
