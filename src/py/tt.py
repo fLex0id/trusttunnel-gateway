@@ -567,7 +567,7 @@ DOH_PRESETS = {   # DNS через туннель: (адрес, SNI, путь)
     "opendns": ("208.67.222.222", "doh.opendns.com", "/dns-query"),
 }
 RU_DNS_PRESETS = {   # DNS для российских сайтов (напрямую)
-    "yandex-doh": ("common.dns.yandex.net", "common.dns.yandex.net", "/dns-query"),
+    "yandex-doh": ("77.88.8.8", "common.dot.dns.yandex.net", "/dns-query"),   # IP есть в сертификате
     "cloudflare-doh": ("1.1.1.1", "cloudflare-dns.com", "/dns-query"),
     "google-doh": ("8.8.8.8", "dns.google", "/dns-query"),
     "quad9-doh": ("9.9.9.9", "dns.quad9.net", "/dns-query"),

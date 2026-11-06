@@ -153,7 +153,8 @@ class GatewayTest(Base):
         self.assertNotIn("rule_set", cfg["route"])
 
     def test_ru_direct_priority(self):
-        self.conf(DOH="opendns", RU_DIRECT="1", RU_DNS="yandex-doh", RU_GEOIP="1", RU_GUARD="1", RU_SUFFIX="1")
+        self.conf(DOH="opendns", RU_DIRECT="1", RU_DNS="custom", RU_DNS_CUSTOM="https://dns.example.ru/dns-query",
+                  RU_GEOIP="1", RU_GUARD="1", RU_SUFFIX="1")
         cfg = self.tt.build_singbox(self.tt.load_conf())
         outs = [(r.get("rule_set") or r.get("domain_suffix"), r.get("outbound")) for r in cfg["route"]["rules"] if r.get("outbound")]
         guard = next(i for i, (k, o) in enumerate(outs) if k == ["ru-blocked"])
@@ -162,7 +163,14 @@ class GatewayTest(Base):
         self.assertEqual(outs[guard][1], "proxy")
         self.assertEqual(outs[ru][1], "direct")
         tags = [s["tag"] for s in cfg["dns"]["servers"]]
-        self.assertIn("dns-tunnel-boot", tags)   # Яндекс DoH по имени → нужен загрузочный DNS через туннель
+        self.assertIn("dns-tunnel-boot", tags)   # DoH по имени → нужен загрузочный DNS через туннель
+
+    def test_yandex_doh_by_ip(self):
+        self.conf(DOH="quad9", RU_DIRECT="1", RU_DNS="yandex-doh")
+        cfg = self.tt.build_singbox(self.tt.load_conf())
+        ru = next(s for s in cfg["dns"]["servers"] if s["tag"] == "dns-ru")
+        self.assertEqual((ru["server"], ru["tls"]["server_name"]), ("77.88.8.8", "common.dot.dns.yandex.net"))
+        self.assertNotIn("dns-tunnel-boot", [s["tag"] for s in cfg["dns"]["servers"]])
 
     def test_udp_block(self):
         self.conf(DOH="cloudflare", UDP_MODE="block")

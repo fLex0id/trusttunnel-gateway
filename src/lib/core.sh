@@ -50,10 +50,10 @@ conf_set() { # conf_set КЛЮЧ ЗНАЧЕНИЕ [КЛЮЧ ЗНАЧЕНИЕ …
 role() { cf ROLE; }
 
 # ── встроенный Python-модуль ─────────────────────────────────────────────────
-py_install() {
-  if [[ ! -f $PY ]] || ! grep -qx "# tt-version: $SELF_VERSION" "$PY"; then
+py_install() { # встроенный tt.py → /usr/local/lib/tt/tt.py, если содержимое изменилось (сверка по SHA256)
+  if [[ ! -f $PY ]] || ! grep -qx "# tt-build: $PY_SHA" "$PY"; then
     install -d -m 755 "$LIB"
-    { py_source; echo "# tt-version: $SELF_VERSION"; } >"$PY.tmp" && chmod 644 "$PY.tmp" && mv -f "$PY.tmp" "$PY"
+    { py_source; echo "# tt-build: $PY_SHA"; } >"$PY.tmp" && chmod 644 "$PY.tmp" && mv -f "$PY.tmp" "$PY"
   fi
 }
 py() { python3 -I "$PY" "$@"; }

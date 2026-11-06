@@ -40,7 +40,8 @@ def main():
         "set -uo pipefail\n",
         "export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n",
         "umask 022\n",
-        "SELF_VERSION=%s\n\n" % version,
+        "SELF_VERSION=%s\n" % version,
+        "PY_SHA=%s\n\n" % hashlib.sha256(rd("src", "py", "tt.py").encode("utf-8")).hexdigest()[:16],
     ]
     for m in MODULES:
         out.append(body(rd("src", "lib", m)))
