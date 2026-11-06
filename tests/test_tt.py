@@ -129,6 +129,7 @@ class ServerTest(Base):
         self.assertIn("auth_failure_status_code = 404", vpn)
         self.assertIn('server_address = "127.0.0.1:8008"', vpn)
         self.assertIn("per_client_metrics = true", vpn)
+        self.assertIn("connection_establishment_timeout_secs = 10", vpn)
         hosts = rd(os.path.join(out, "hosts.toml"))
         self.assertIn('hostname = "www.example.com"', hosts)
         self.assertNotIn("reverse_proxy_hosts", hosts)

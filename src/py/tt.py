@@ -201,10 +201,13 @@ def colors():
 
 
 # ══ СЕРВЕР ═══════════════════════════════════════════════════════════════════
+# connection_establishment_timeout_secs = 10 (у TrustTunnel по умолчанию 30): сервер берёт ПЕРВЫЙ адрес сайта
+# и не пробует остальные — если этот адрес недоступен из сети хостера, соединение висит до тайм-аута.
+# 10 с с запасом хватает нормальному соединению, а неудачная попытка быстрее уступает повтору браузера.
 BASE_VPN = """# Создано tt. Не правьте вручную: изменения делаются через tt и /etc/tt/tt.conf.
 tls_handshake_timeout_secs = 10
 client_listener_timeout_secs = 600
-connection_establishment_timeout_secs = 30
+connection_establishment_timeout_secs = 10
 tcp_connections_timeout_secs = 604800
 udp_connections_timeout_secs = 300
 
