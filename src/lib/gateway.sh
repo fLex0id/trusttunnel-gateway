@@ -150,7 +150,7 @@ trusttunnel-client.service|/etc/systemd/system/trusttunnel-client.service|644|ro
 sing-box.service|/etc/systemd/system/sing-box.service|644|root:root|daemon
 wg-dropin.conf|/etc/systemd/system/wg-quick@$WG_IF.service.d/10-tt.conf|644|root:root|daemon
 tt-watchdog.service|/etc/systemd/system/tt-watchdog.service|644|root:root|daemon
-tt-watchdog.timer|/etc/systemd/system/tt-watchdog.timer|644|root:root|restart:tt-watchdog.timer
+tt-watchdog.timer|/etc/systemd/system/tt-watchdog.timer|644|root:root|daemon
 tt-ru.service|/etc/systemd/system/tt-ru.service|644|root:root|daemon
 tt-ru.timer|/etc/systemd/system/tt-ru.timer|644|root:root|daemon
 trusttunnel_client.toml|$TTC_DIR/trusttunnel_client.toml|640|root:ttclient|restart:trusttunnel-client

@@ -234,7 +234,7 @@ def render_server(out):
     code = code if code in ("403", "404", "405", "407") else "404"
     head = [
         'listen_address = "0.0.0.0:%d"' % port,
-        "ipv6_available = %s" % ("true" if c.get("IPV6") == "1" else "false"),
+        "ipv6_available = %s" % ("true" if c.get("IPV6_EGRESS") == "1" else "false"),   # по умолчанию выкл.
         "allow_private_network_connections = false",
         'credentials_file = "%s/credentials.toml"' % TT_DIR,
         'rules_file = "%s/rules.toml"' % TT_DIR,

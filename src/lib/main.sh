@@ -109,11 +109,11 @@ doctor() {
   {
     echo "tt $SELF_VERSION · $(date '+%F %T') · $(sys_line)"
     echo "Роль: $(role)"; echo
-    echo "== tt.conf (без секретов) =="; sed 's/^\(TOKEN\|CHAT\)=.*/\1=***/' "$CONF" 2>/dev/null; echo
+    echo "== tt.conf (без личных данных) =="; sed 's/^\(EMAIL\)=.*/\1="***"/' "$CONF" 2>/dev/null; echo
     if [[ $(role) == gateway ]]; then
       echo "== сервер =="; ep_info; echo
       for u in trusttunnel-client sing-box "wg-quick@$WG_IF" tt-watchdog.timer tt-ru.timer; do echo "$u: $(systemctl is-active "$u" 2>/dev/null)"; done
-      echo; wg show "$WG_IF" 2>/dev/null | sed 's/\(preshared key\|private key\): .*/\1: ***/'
+      echo; wg show "$WG_IF" 2>/dev/null | sed 's/\(preshared key\|private key\): .*/\1: ***/; s/\(endpoint\): .*/\1: *** (адрес устройства скрыт)/'
       echo; nft list table ip tt_tproxy 2>/dev/null | head -30; nft list table inet tt_guard 2>/dev/null
       echo; echo "Выход через туннель: $(gw_exit_ip || echo нет)"
       for u in trusttunnel-client sing-box; do echo; echo "== журнал $u =="; journalctl -u "$u" -n 30 --no-pager 2>/dev/null; done
@@ -128,7 +128,7 @@ doctor() {
   chmod 600 "$f"
   sed -i 's/\(password\|PrivateKey\|PresharedKey\|TOKEN\)\([" =:]*\)[^ ",]*/\1\2***/g' "$f"
   ok "Сводка для разбора проблем: $f"
-  note "Пароли и ключи в ней скрыты — файл можно переслать тому, кто поможет."
+  note "Пароли, ключи, e-mail и адреса устройств в ней скрыты — файл можно переслать тому, кто поможет."
 }
 maint_update_all() {
   self_update_check || true

@@ -133,6 +133,10 @@ class ServerTest(Base):
         self.assertIn('hostname = "www.example.com"', hosts)
         self.assertNotIn("reverse_proxy_hosts", hosts)
         self.assertIn("169.254.0.0/16", rd(os.path.join(out, "rules.toml")))
+        self.assertIn("ipv6_available = false", vpn)   # IPv6 на выходе выключен по умолчанию
+        self.conf(DOMAIN="www.example.com", IPV6_EGRESS="1")
+        self.run_cmd("render", "server", out)
+        self.assertIn("ipv6_available = true", rd(os.path.join(out, "vpn.toml")))
 
 
 class GatewayTest(Base):

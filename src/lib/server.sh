@@ -159,8 +159,9 @@ srv_decoy() { # пересоздать сайт, если сменились д�
   command -v restorecon >/dev/null 2>&1 && restorecon -R "$DECOY_ROOT" 2>/dev/null
   DECOY_INFO=$out
 }
-# IPv6 включается в TrustTunnel, только если реально работает: «маршрут есть, а связи нет» у дешёвых VPS —
-# частая история, и тогда сервер случайно выбирает IPv6-адрес сайта и соединение срывается.
+# IPv6 на выходе сервера выключен: у TrustTunnel нет перехода на IPv4, и при нерабочем или частично
+# рабочем IPv6 каждое соединение к сайту с IPv6-адресом ждёт 30 с и обрывается (проверено на реальном VPS).
+# Сайты открываются по IPv4; шлюз IPv6 не пропускает. Включить вручную: IPV6_EGRESS="1" в tt.conf + tt apply.
 ipv6_ok() {
   ip -6 route get 2001:4860:4860::8888 >/dev/null 2>&1 || return 1
   curl -6 -fsS -o /dev/null -m 6 https://www.google.com/generate_204 2>/dev/null \
@@ -168,8 +169,9 @@ ipv6_ok() {
 }
 srv_apply() {
   local s m rc=0
-  if [[ $(cf IPV6 0) == 1 ]] && ! ipv6_ok; then
-    conf_set IPV6 0; echo "$(date '+%F %T') IPv6 на сервере не работает — отключён в TrustTunnel" >>"$LOG"
+  if [[ -n ${CFG[IPV6]:-} ]]; then   # наследие 3.0.0–3.0.1: ключ IPV6 включался автоматически
+    unset 'CFG[IPV6]'; conf_set IPV6_EGRESS "$(cf IPV6_EGRESS 0)"
+    echo "$(date '+%F %T') IPv6 на выходе сервера выключен (ключ IPV6 заменён на IPV6_EGRESS=0)" >>"$LOG"
   fi
   install -d -m 755 "$STATE"; install -d -m 755 "$ACME_ROOT"
   srv_decoy || { err "Не удалось создать сайт-заглушку"; return 1; }
@@ -428,6 +430,7 @@ srv_status() {
   kv "Пользователи" "$(creds count) · онлайн $(py users --online)"
   kv "DNS приложений" "$(dns_name "$(cf APP_DNS)")"
   kv "Сертификат" "$(cert_label) · $(cert_days) дн."
+  kv "IPv6 на выходе" "$([[ $(cf IPV6_EGRESS 0) == 1 ]] && echo включён || echo 'выключен (сайты открываются по IPv4)')"
   section "Проверки"
   chk() { if eval "$2"; then ok "$1"; else err "$1"; fi; }
   chk "TrustTunnel работает" 'systemctl is-active --quiet trusttunnel'
@@ -580,7 +583,7 @@ srv_install() {
   srv_questions
   conf_set ROLE server DOMAIN "$DOMAIN" DECOY_DOMAIN "$DECOY_DOMAIN" PORT "$PORT" EMAIL "$EMAIL" ACME_CLIENT "$ACME_CLIENT" \
     THEME "$THEME" APP_DNS "$APP_DNS" AUTH_CODE "$(cf AUTH_CODE 404)" \
-    IPV6 "$(ipv6_ok && echo 1 || echo 0)"
+    IPV6_EGRESS "$(cf IPV6_EGRESS 0)"
 
   step "Подготовка системы"
   ensure_swap
