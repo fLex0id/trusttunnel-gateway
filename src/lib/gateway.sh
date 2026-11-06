@@ -622,7 +622,7 @@ gw_questions() {
     TPROXY_PORT=$((10#$TPROXY_PORT))
     if [[ $PIN_MODE == pin ]]; then
       section "Адрес сервера TrustTunnel" "Закрепить IP — шлюз не обращается к DNS за адресом сервера (незаметнее)." "При смене IP сервера: tt repin."
-      choose PIN_MODE "" pin "pin|Закрепить IP|рекомендуется" "name|Спрашивать DNS|через DNS хостера шлюза"
+      b=$PIN_MODE; PIN_MODE=; choose PIN_MODE "" "$b" "pin|Закрепить IP|рекомендуется" "name|Спрашивать DNS|через DNS хостера шлюза"
     fi
     if [[ $RU_ENABLE == 1 ]]; then
       section "Правила для российских сайтов"

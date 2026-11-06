@@ -141,9 +141,14 @@ fw_close() {
 # ── загрузки с GitHub и проверка подписи ─────────────────────────────────────
 fetch() { curl -fsSL --retry 3 --retry-delay 3 --connect-timeout 15 -m 600 -o "$2" "$1"; }
 gh_latest() { # репозиторий → последний стабильный тег (бета-версии в «latest» не попадают)
+  # Через перенаправление страницы релизов: у API GitHub лимит 60 запросов в час на IP (за общим NAT кончается быстро)
   local v
-  v=$(curl -fsS --retry 2 --max-time 15 "https://api.github.com/repos/$1/releases/latest" 2>/dev/null \
-      | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+  v=$(curl -fsS -o /dev/null --retry 2 --max-time 15 -w '%{redirect_url}' "https://github.com/$1/releases/latest" 2>/dev/null)
+  v=${v##*/tag/}
+  if [[ ! $v =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    v=$(curl -fsS --max-time 15 "https://api.github.com/repos/$1/releases/latest" 2>/dev/null \
+        | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+  fi
   [[ $v =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]] && echo "v${v#v}"
   return 0
 }
