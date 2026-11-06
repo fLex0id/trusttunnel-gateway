@@ -1,0 +1,24 @@
+name: Релиз
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Версия в VERSION совпадает с тегом
+        run: test "v$(cat VERSION)" = "$GITHUB_REF_NAME"
+      - name: Сборка и проверки
+        run: |
+          python3 build.py
+          shellcheck -S warning -e SC2034,SC2154 dist/tt.sh install.sh
+          python3 -m unittest discover -s tests
+      - name: Публикация
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          awk -v v="## $GITHUB_REF_NAME" '$0==v{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
+          gh release create "$GITHUB_REF_NAME" dist/tt.sh dist/tt.sh.sha256 --title "$GITHUB_REF_NAME" --notes-file notes.md

@@ -1,0 +1,23 @@
+name: Проверки
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Сборка
+        run: python3 build.py
+      - name: ShellCheck
+        run: shellcheck -S warning -e SC2034,SC2154 dist/tt.sh install.sh
+      - name: Синтаксис bash
+        run: bash -n dist/tt.sh && bash -n install.sh
+      - name: Тесты генераторов (Python 3.9 и новее)
+        run: python3 -m unittest discover -s tests -v
+      - name: Python 3.9 (как на Rocky Linux 9)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - run: python -m unittest discover -s tests
