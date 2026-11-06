@@ -159,8 +159,18 @@ srv_decoy() { # пересоздать сайт, если сменились д�
   command -v restorecon >/dev/null 2>&1 && restorecon -R "$DECOY_ROOT" 2>/dev/null
   DECOY_INFO=$out
 }
+# IPv6 включается в TrustTunnel, только если реально работает: «маршрут есть, а связи нет» у дешёвых VPS —
+# частая история, и тогда сервер случайно выбирает IPv6-адрес сайта и соединение срывается.
+ipv6_ok() {
+  ip -6 route get 2001:4860:4860::8888 >/dev/null 2>&1 || return 1
+  curl -6 -fsS -o /dev/null -m 6 https://www.google.com/generate_204 2>/dev/null \
+    || curl -6 -fsS -o /dev/null -m 6 https://cloudflare.com/cdn-cgi/trace 2>/dev/null
+}
 srv_apply() {
   local s m rc=0
+  if [[ $(cf IPV6 0) == 1 ]] && ! ipv6_ok; then
+    conf_set IPV6 0; echo "$(date '+%F %T') IPv6 на сервере не работает — отключён в TrustTunnel" >>"$LOG"
+  fi
   install -d -m 755 "$STATE"; install -d -m 755 "$ACME_ROOT"
   srv_decoy || { err "Не удалось создать сайт-заглушку"; return 1; }
   s=$(mktemp -d)
@@ -570,7 +580,7 @@ srv_install() {
   srv_questions
   conf_set ROLE server DOMAIN "$DOMAIN" DECOY_DOMAIN "$DECOY_DOMAIN" PORT "$PORT" EMAIL "$EMAIL" ACME_CLIENT "$ACME_CLIENT" \
     THEME "$THEME" APP_DNS "$APP_DNS" AUTH_CODE "$(cf AUTH_CODE 404)" \
-    IPV6 "$(ip -6 route get 2001:4860:4860::8888 >/dev/null 2>&1 && echo 1 || echo 0)"
+    IPV6 "$(ipv6_ok && echo 1 || echo 0)"
 
   step "Подготовка системы"
   ensure_swap

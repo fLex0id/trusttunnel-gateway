@@ -321,14 +321,23 @@ cl_remove() {
 cl_list() { echo; C_OK="$c_ok" C_DIM="$c_dim" C_0="$c_0" WG_DUMP="$(wg show "$WG_IF" dump 2>/dev/null | tail -n +2)" py clients; }
 
 # ── российские сайты напрямую ────────────────────────────────────────────────
+ru_fetch() { # url файл — через туннель, до 5 попыток: единичный сбой соединения не должен срывать загрузку
+  local i
+  for i in 1 2 3 4 5; do
+    curl -fsSL --connect-timeout 20 -m 180 -x "socks5h://127.0.0.1:$TEST_PORT" -o "$2" "$1" 2>>"$LOG" \
+      && [[ $(head -c 3 "$2") == SRS ]] && return 0
+    echo "$(date '+%F %T') список: попытка $i не удалась ($1)" >>"$LOG"
+    (( i < 5 )) && sleep $((i * 3))
+  done
+  return 1
+}
 ru_download() { # через туннель; новый список заметно меньше прежнего — не принимается (защита от порчи)
   local kind tag url tmp dst old new fail=0
   RU_CHANGED=0
   install -d -m 755 "$RULES_DIR"
   while read -r kind tag url; do
     dst=$RULES_DIR/$tag.srs; tmp=$(mktemp "$RULES_DIR/.dl.XXXXXX")
-    if curl -fsSL --retry 3 --retry-delay 5 -m 180 -x "socks5h://127.0.0.1:$TEST_PORT" -o "$tmp" "$url" \
-       && [[ $(head -c 3 "$tmp") == SRS ]]; then
+    if ru_fetch "$url" "$tmp"; then
       new=$(stat -c %s "$tmp"); old=$(stat -c %s "$dst" 2>/dev/null || echo 0)
       if cmp -s "$tmp" "$dst"; then rm -f "$tmp"; continue; fi
       if (( old > 0 && new * 2 < old )); then
@@ -336,7 +345,7 @@ ru_download() { # через туннель; новый список замет�
       fi
       chmod 644 "$tmp"; mv -f "$tmp" "$dst"; RU_CHANGED=1; note "  ↓ $tag"
     else
-      rm -f "$tmp"; warn "Не удалось скачать список $tag"; fail=1
+      rm -f "$tmp"; warn "Не удалось скачать список $tag (5 попыток; подробности: $LOG)"; fail=1
     fi
   done < <(py sets)
   return "$fail"
